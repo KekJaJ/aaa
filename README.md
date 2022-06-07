@@ -43,6 +43,8 @@ vendor_cache_manager_default_cluster_size
 ```
 ### 2. Habilitacion se user-defined projects 
 
+# Este es un pre requesito para el debido monitoreo con grafana antes de su configuracion
+
 1. Editamos el *ConfigMap*  llamado cluster-monitoring-config
 ```bash
 oc -n openshift-monitoring edit configmap cluster-monitoring-config
