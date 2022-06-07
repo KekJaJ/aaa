@@ -33,7 +33,7 @@ metadata:
 ```bash
 NameSpace: poc-redhat-babysitting
 Tipo: ServiceMonitor
-Nombre: sso-infinispan-monitor
+Nombre en OCP: sso-infinispan-monitor
 Nombre archivo: sso-infinispan-monitor.yaml
 ```
 5. Ingresar a Openshift web console y como administrador, nos dirigimos a nuestro panel, abrimos la pestaña *observe/metrics* confirmando que podemos buscar la siguiente metrica
@@ -43,7 +43,7 @@ vendor_cache_manager_default_cluster_size
 ```
 ### 2. Habilitacion se user-defined projects 
 
-#### Este es un pre requesito para el debido monitoreo con grafana antes de su configuracion
+#### Este es un pre-requesito para el debido monitoreo con grafana antes de su configuracion
 
 1. Editamos el *ConfigMap*  llamado cluster-monitoring-config
 ```bash
@@ -62,55 +62,46 @@ data:
 ```
 ### 3. Habilitacion de monitoreo con grafana 
 
-1. Ingresar a Openshift web console y como administrador, nos dirigimos a *installed operators/grafana*
-> dentro del operador grafana creamos un grafana CR en la seccion suoperior llamada "grafana"
+1. Ingresar a Openshift web console y como administrador, nos dirigimos a *installed operators>grafana*
+> dentro del operador grafana creamos un grafana CR en la seccion superior llamada "grafana"
 ```bash
-apiVersion: integreatly.org/v1alpha1
-kind: Grafana
-metadata:
-  name: grafana-monitoring-infinispan
-spec:
-  config:
-    auth:
-      disable_signout_menu: true
-    auth.anonymous:
-      enabled: true
-    log:
-      level: warn
-      mode: console
-    security:
-      admin_password: redhat01
-      admin_user: admin
-  dashboardLabelSelector:
-    - matchExpressions:
-        - key: monitoring-key
-          operator: In
-          values:
-            - middleware
-  ingress:
-    enabled: true
+NameSpace: grafana-monitoring
+Tipo: Grafana
+Nombre en OCP: grafana-monitoring-infinispan
+Nombre archivo: grafanaCR.yaml
+``` 
+```bash
+oc project grafana-monitoring
+```
+```bash
+oc apply -f grafanaCR.yaml
 ``` 
 2. Creaamos un serviceAccount para permitir a grafana leer metricas de data grid
 ```bash
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: infinispan-monitoring
+NameSpace: grafana-monitoring
+Tipo: serviceAccount
+Nombre en OCP: infinispan-monitoring
+Nombre archivo: serviceAccount.yaml
 ``` 
-> 1. Aplicamos el service account
 ```bash
 oc apply -f service-account.yaml
 ``` 
-> 2. Otorgamos permisos *cluster-monitoring-view* al *ServiceAccount*
+> Otorgamos permisos *cluster-monitoring-view* al *ServiceAccount*
 ```bash
 oc adm policy add-cluster-role-to-user cluster-monitoring-view -z infinispan-monitoring
 ``` 
 3. Creamos una fuente de datos de grafana 
-> 1. Obtenemos un token para el ServiceAccount
+> 1. Primero obtenemos un token proveniente del ServiceAccount creado anteriormente y lo guardamos para utilizarlo en los proximos pasos
 ```bash
 oc serviceaccounts get-token infinispan-monitoring
 ```
-> 2. definimos un data source de tipo grafana incluyeendo el token obtenido anteriormente y lo ingresamos en el archivo a escala de *spec.datasources.secureJsonData.httpHeaderValue1*
+4. definimos un data-source de tipo grafana incluyeendo el *token* obtenido anteriormente y lo ingresamos en el archivo a escala de *spec.datasources.secureJsonData.httpHeaderValue1*
+```bash
+NameSpace: grafana-monitoring
+Tipo: GrafanaDataSource
+Nombre en OCP: infinispan-grafana-datasource
+Nombre archivo: grafana_dataSource.yaml
+``` 
 ```bash
 apiVersion: integreatly.org/v1alpha1
 kind: GrafanaDataSource
@@ -134,12 +125,18 @@ spec:
       type: prometheus
       url: 'https://thanos-querier.openshift-monitoring.svc.cluster.local:9091'
 ```
->3. aplicamos el source 
+>aplicamos el source 
 ```bash
 oc apply -f grafana-datasource.yaml
 ```
-### 4. Configuracion de paneles 
-1. creamos un ConfigMap llamado *infinispan-operator-config* en el operador donde se encuentra nuestros caches 
+### 4. Configuracion de paneles para desplegar en grafana UI
+1. creamos un ConfigMap en el operador donde se encuentra nuestros caches de data grid 
+```bash
+NameSpace: poc-redhat-babysitting
+Tipo: ConfigMap
+Nombre en OCP: infinispan-operator-config
+Nombre archivo: configmap-operator-infinispan.yaml
+``` 
 ```bash
 apiVersion: v1
 kind: ConfigMap
@@ -153,10 +150,10 @@ data:
 ***monitorin.key: es la clave de supervision***
 
 
-***dashborad.name: es el nombre del grafana dashboard de nuestro operador***
+***dashborad.name: es el nombre del grafana dashboard que se creará en nuestro operador de grafana***
 
 
-***dashboard.namespace: es el nombre de nuestro name donde se encuentra nuestro cache***
+***dashboard.namespace: es el nombre de nuestro namespace donde se encuentra nuestro cache***
 
 
 
@@ -164,6 +161,11 @@ data:
 ```bash
 oc apply -f infinispan-operator-config.yaml
 ```   
+2. le otorgamos permisos de administrador a nuestro serviceAccount creado con anterioridad
+```bash
+oc policy add-role-to-user edit system:serviceaccount:poc-redhat-babysitting:infinispan-operator-controller-manager -n grafana-monitoring
+```  
+
 3. obtenemos la ruta url donde se encuentra nuestro Grafana disponible
 ```bash
 oc obtener rutas grafana-ruta -o jsonpath=https://"{.spec.host}"
