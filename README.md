@@ -45,10 +45,12 @@ vendor_cache_manager_default_cluster_size
 
 #### Este es un pre-requesito para el debido monitoreo con grafana antes de su configuracion
 
-1. Editamos el *ConfigMap*  llamado cluster-monitoring-config
+1. Editamos el *ConfigMap*  llamado cluster-monitoring-config dentro del namespace openshift-monitoring
 ```bash
 oc -n openshift-monitoring edit configmap cluster-monitoring-config
 ``` 
+## Si esta etiqueya ya se encuentra en true no se recomienda reiniciar esta (true a false y nuevamente true)
+
 > Añadimos la variable *enableUserWorkload* en *true* a la escala de data/config.yaml
 ```bash
  apiVersion: v1
