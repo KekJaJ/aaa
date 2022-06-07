@@ -15,9 +15,9 @@
 ```bash
 oc login http://....:port
 ```
-2. Ingresar en proyecto el cual posea los caches a monitorear
+2. Ingresar en proyecto el cual posea los caches a monitorear en nuestro caso donde se encuentra data grid
 ```bash
-oc project <namespace>
+oc project <namespace> 
 ```
 3. Añadir anotacion al a los cluster infinispan CR *infinispan.org/monitoring* en *true* como se muestra a continuacion para habilitar el monitoreo de sus
 infinipan CR
