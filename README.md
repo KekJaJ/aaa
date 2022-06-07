@@ -157,7 +157,7 @@ data:
 
 
 
-2. creamos o actualizamos el *infinispan-operator-config* 
+1. creamos o actualizamos el *infinispan-operator-config* 
 ```bash
 oc apply -f infinispan-operator-config.yaml
 ```   
