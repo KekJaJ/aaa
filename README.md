@@ -78,7 +78,7 @@ oc project grafana-monitoring
 ```bash
 oc apply -f grafanaCR.yaml
 ``` 
-2. Creaamos un serviceAccount para permitir a grafana leer metricas de data grid
+2. Creamos un serviceAccount para permitir a grafana leer metricas de data grid
 ```bash
 NameSpace: grafana-monitoring
 Tipo: serviceAccount
