@@ -49,7 +49,7 @@ vendor_cache_manager_default_cluster_size
 ```bash
 oc -n openshift-monitoring edit configmap cluster-monitoring-config
 ``` 
-## Si esta etiqueya ya se encuentra en true no se recomienda reiniciar esta (true a false y nuevamente true)
+## *Si esta etiqueya ya se encuentra en true no se recomienda reiniciar esta (true a false y nuevamente true)*
 
 > Añadimos la variable *enableUserWorkload* en *true* a la escala de data/config.yaml
 ```bash
