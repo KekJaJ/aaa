@@ -6,8 +6,8 @@
 
 1. Poseer un client OC 
 2. Acceso a openshift con usuario con rol cluster-admin
-3. Namespace monitoring-infinispam creado
-4. Operador Grafana version alpha v4.4.1 habilitado en namespace monitoring-infinispan (namespace donde se administrara el monitoreo)
+3. Namespace con data grid y namespace distinto con grafana version alpha 
+4. Operador Grafana version alpha v4.4.1 habilitado en namespace (namespace donde se administrara el monitoreo)
 
 ### 1. Habilitacion de monitoreo en clusteres de caches
 
@@ -21,7 +21,6 @@ oc project <namespace>
 ```
 3. Añadir anotacion al a los cluster infinispan CR *infinispan.org/monitoring* en *true* como se muestra a continuacion para habilitar el monitoreo de sus
 infinipan CR
-e
 ```bash
 apiVersion: infinispan.org/v1
 kind: Infinispan
@@ -30,23 +29,12 @@ metadata:
   annotations:
     **infinispan.org/monitoring: 'true'**
 ```
-4. se creará un service monitor llamado <namespace>-monitoring similar al siguiente ejemplo
+4. Se creará un *serviceMonitor* llamado (namespace)-monitoring :
 ```bash
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: service-monitor-infinispan
-  namespace: poc-redhat-babysitting 
-  labels:
-    k8s-app: apicast-production-monitor
-spec:
-  endpoints:
-    - interval: 30s
-      port: web
-      scheme: http
-  selector:
-    matchLabels:
-      app: apicast-production-monitor
+NameSpace: poc-redhat-babysitting
+Tipo: ServiceMonitor
+Nombre: sso-infinispan-monitor
+Nombre archivo: sso-infinispan-monitor.yaml
 ```
 5. Ingresar a Openshift web console y como administrador, nos dirigimos a nuestro panel, abrimos la pestaña *observe/metrics* confirmando que podemos buscar la siguiente metrica
 
