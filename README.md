@@ -1,25 +1,24 @@
-# Habilitación de Operador grafana monitoreo de caches
+# Monitoring Data Grid services - Guide - Red Hat Data Grid 8.3
 
-## Despliegue del Operator
+Link referencia: https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.3/guide/990f6af5-2a9c-4af1-afaf-d2ea562c5bf8
 
 ### Pre-requisitos
 
 1. Poseer un client OC 
 2. Acceso a openshift con usuario con rol cluster-admin
-3. Namespace con data grid y namespace distinto con grafana version alpha 
-4. Operador Grafana version alpha v4.4.1 habilitado en namespace (namespace donde se administrara el monitoreo)
+3. Namespace con data grid y namespace con grafana version alpha v4.4.1 donde se realizará el monitoreo.
 
-### 1. Habilitacion de monitoreo en clusteres de caches
+### 1. Habilitacion de monitoreo en namespace DataGrid
 
 1. Login sobre Openshift
 ```bash
 oc login http://....:port
 ```
-2. Ingresar en proyecto el cual posea los caches a monitorear en nuestro caso donde se encuentra data grid
+2. Ingresar en proyecto el contiene el operador de data grid
 ```bash
 oc project <namespace> 
 ```
-3. Añadir anotacion al a los cluster infinispan CR *infinispan.org/monitoring* en *true* como se muestra a continuacion para habilitar el monitoreo de sus
+3. Cuando se generá la habilitación de Data Grid a traves de operador se genera un CR al cual se le debe añadir anotacion al a los cluster infinispan CR *infinispan.org/monitoring* en *true* como se muestra a continuacion para habilitar el monitoreo de sus
 infinipan CR
 ```bash
 apiVersion: infinispan.org/v1
@@ -29,15 +28,14 @@ metadata:
   annotations:
     **infinispan.org/monitoring: 'true'**
 ```
-4. Se creará un *serviceMonitor* llamado (namespace)-monitoring :
+4. Al ingresar esta anotación se genera automaticamente se creará un *serviceMonitor* sobre el mismo namespace:
 ```bash
 NameSpace: poc-redhat-babysitting
 Tipo: ServiceMonitor
 Nombre en OCP: sso-infinispan-monitor
-Nombre archivo: sso-infinispan-monitor.yaml
 ```
-5. Ingresar a Openshift web console y como administrador, nos dirigimos a nuestro panel, abrimos la pestaña *observe/metrics* confirmando que podemos buscar la siguiente metrica
-
+5. Para confirmar que el monitoreo este activo se debe ir Metrics y validarlo con la query:
+Ingresar a Openshift web console y como administrador, nos dirigimos a nuestro panel, abrimos la pestaña *observe/metrics* confirmando que podemos buscar la siguiente metrica
 ```bash
 vendor_cache_manager_default_cluster_size
 ```
@@ -78,7 +76,7 @@ oc project grafana-monitoring
 ```bash
 oc apply -f grafanaCR.yaml
 ``` 
-2. Creamos un serviceAccount para permitir a grafana leer metricas de data grid
+2. Creamos un serviceAccount para permitir a grafana leer metricas de data grid sobre el namespace donde se habilitó la instancia de grafana
 ```bash
 NameSpace: grafana-monitoring
 Tipo: serviceAccount
@@ -86,9 +84,12 @@ Nombre en OCP: infinispan-monitoring
 Nombre archivo: serviceAccount.yaml
 ``` 
 ```bash
-oc apply -f service-account.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: infinispan-monitoring
 ``` 
-> Otorgamos permisos *cluster-monitoring-view* al *ServiceAccount*
+>  Aplicar permisos al SA
 ```bash
 oc adm policy add-cluster-role-to-user cluster-monitoring-view -z infinispan-monitoring
 ``` 
@@ -123,7 +124,7 @@ spec:
     **secureJsonData:**
         httpHeaderValue1: >-
           Bearer
-        **eyJhbGciOiJSUzI1NiIsImtpZCI6Ii1LZU...**
+        **eyJhbGciOiJSUzI1NiIsImtp.....**
       type: prometheus
       url: 'https://thanos-querier.openshift-monitoring.svc.cluster.local:9091'
 ```
@@ -131,7 +132,7 @@ spec:
 ```bash
 oc apply -f grafana-datasource.yaml
 ```
-### 4. Configuracion de paneles para desplegar en grafana UI
+### 4. Generar GrafanaDashboard sobre Instancia de Grafana en diferente namespace:
 1. creamos un ConfigMap en el operador donde se encuentra nuestros caches de data grid 
 ```bash
 NameSpace: poc-redhat-babysitting
@@ -139,24 +140,22 @@ Tipo: ConfigMap
 Nombre en OCP: infinispan-operator-config
 Nombre archivo: configmap-operator-infinispan.yaml
 ``` 
+2. Sobre el namespace de DataGrid se debe crear el siguiente configMap apuntando hacia el namespace de Grafana
 ```bash
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: infinispan-operator-config
 data:
-  grafana.dashboard.monitoring.key: middleware
-  grafana.dashboard.name: infinispan
-  grafana.dashboard.namespace: infinispan
+  grafana.dashboard.monitoring.key: middleware 
+  grafana.dashboard.name: infinispan <--1
+  grafana.dashboard.namespace: infinispan <--2
 ``` 
 ***monitorin.key: es la clave de supervision***
 
+1- dashborad.name: es el nombre del grafana dashboard que se creará en nuestro operador de grafana
 
-***dashborad.name: es el nombre del grafana dashboard que se creará en nuestro operador de grafana***
-
-
-***dashboard.namespace: es el nombre de nuestro namespace donde se encuentra nuestro cache***
-
+2- dashboard.namespace: es el nombre de nuestro namespace donde se encuentra nuestro cache
 
 
 1. creamos o actualizamos el *infinispan-operator-config* 
@@ -167,7 +166,6 @@ oc apply -f infinispan-operator-config.yaml
 ```bash
 oc policy add-role-to-user edit system:serviceaccount:poc-redhat-babysitting:infinispan-operator-controller-manager -n grafana-monitoring
 ```  
-
 3. obtenemos la ruta url donde se encuentra nuestro Grafana disponible
 ```bash
 oc obtener rutas grafana-ruta -o jsonpath=https://"{.spec.host}"
