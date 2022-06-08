@@ -163,7 +163,7 @@ data:
 ```bash
 oc apply -f infinispan-operator-config.yaml
 ```   
-2. le otorgamos permisos de administrador a nuestro serviceAccount creado con anterioridad
+2. se le da permisos al operador del infinispan para realizar la creacion del folder y comunicacion con el namespace donde se encuentra el grafana
 ```bash
 oc policy add-role-to-user edit system:serviceaccount:poc-redhat-babysitting:infinispan-operator-controller-manager -n grafana-monitoring
 ```  
